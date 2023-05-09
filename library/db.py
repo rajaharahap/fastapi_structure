@@ -1,17 +1,19 @@
 # from email._parseaddr import quote
-
-from sqlalchemy import create_engine as dbAccess, text
-from sqlalchemy.orm import sessionmaker
+import asyncio
+from sqlalchemy.ext.asyncio import create_async_engine as dbAccess
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from config import db_config as dbDefaultConfig
 import json
 from urllib.parse import quote_plus
 from sqlalchemy.exc import SQLAlchemyError
 
+
 class Db:
     # engine = create_engine('postgresql+psycopg2://user:password@hostname/database_name')
     __dbTypeCon = {
-        "postgres": "postgresql://{}:{}@{}:{}/{}",
-        "mysql": "mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8mb4"
+        "postgres": "postgresql+asyncpg://{}:{}@{}:{}/{}",
+        "mysql": "mysql+pymysql+asyncpg://{}:{}@{}:{}/{}?charset=utf8mb4"
     }
 
     def __init__(self, db_config = None):
@@ -30,7 +32,7 @@ class Db:
             self.__dbType = dbDefaultConfig.db_config["dbType"]
             self.__port = dbDefaultConfig.db_config["port"]
 
-        self.__dbExec = dbAccess(self.__setDbConnectString()).connect()
+        self.__dbExec = dbAccess(self.__setDbConnectString())
 
     def __setDbConnectString(self):
 
@@ -51,33 +53,33 @@ class Db:
     def convert_datetime_to_string(self, datetime):
         return str(datetime)
 
-    def executeQuery(self, sqlString):
-        query = self.__dbExec.execute(text(sqlString))
-        self.__dbExec.commit()
-        return query
+    async def executeQuery(self, sqlString):
+        return await self.__dbExec.execute(text(sqlString))
 
-    def executeToDict(self, sqlString):
-        data= self.__dbExec.execute(text(sqlString)).mappings().all()
-        self.__dbExec.commit()
-        return data
+    async def executeToDict(self, sqlString):
+        # print("xxxxxx")
+        async with self.__dbExec.connect() as conn:
+            result = await conn.execute(text(sqlString))
+            await self.__dbExec.dispose()
+            return result.mappings().all()
 
-    def executeToJSON(self, sqlString):
-        return json.dumps(self.executeToDict(sqlString), default=self.convert_datetime_to_string)
+    # async def executeToJSON(self, sqlString):
+    #     return json.dumps(await self.executeToDict(sqlString), default=self.convert_datetime_to_string)
 
-    def executeTrans(self, sqlStringArray):
-        Session = sessionmaker(bind=self.__dbExec)
+    async def executeTrans(self, sqlStringArray:[]):
+        Session = async_sessionmaker(bind=self.__dbExec)
         session = Session()
         status=""
         try:
             for sqlString in sqlStringArray:
-                session.execute(text(sqlString))
-            session.commit()
+                await session.execute(text(sqlString))
+            await session.commit()
             status = True
         except SQLAlchemyError as e:
-            session.rollback()
+            await session.rollback()
             status = False
         finally:
-            session.close()
+            await session.close()
 
         return status
 

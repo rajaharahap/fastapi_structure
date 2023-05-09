@@ -36,10 +36,12 @@ elif sys.argv[1].lower()=='-c':
             f = open(path+'/modules/' + sys.argv[3]+'/' +sys.argv[2]+'.py', 'r')
             old_name = sys.argv[2]
             class_name = old_name[:1]+old_name[1:len(old_name)]
+            module_name = sys.argv[3]
             print(class_name)
             textwrap = f.read()
             #print(textwrap)
             textwrap = str(textwrap).replace("class__", f"{class_name}")
+            textwrap = str(textwrap).replace("module__", f"{module_name}")
             f.close()
 
 

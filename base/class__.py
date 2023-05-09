@@ -21,7 +21,7 @@ url/api/class__/testing
 for post method and other method, check tutorial from 
 https://fastapi.tiangolo.com/
 """
-@app.get("/api/class__/testing")
+@app.get("/api/module__/class__/testing")
 async def get_data(welcome):
     ob_data = class__()
     return ob_data.test_data(welcome)
