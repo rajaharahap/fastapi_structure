@@ -13,7 +13,7 @@ class Db:
     # engine = create_engine('postgresql+psycopg2://user:password@hostname/database_name')
     __dbTypeCon = {
         "postgres": "postgresql+asyncpg://{}:{}@{}:{}/{}",
-        "mysql": "mysql+pymysql+asyncpg://{}:{}@{}:{}/{}?charset=utf8mb4"
+        "mysql": "mysql+pymysql+aiomysql://{}:{}@{}:{}/{}?charset=utf8mb4"
     }
 
     def __init__(self, db_config = None):
@@ -163,4 +163,4 @@ class Db:
         where = where[:-3]
         sqlString = sql +where
         return sqlString
-dbConnect = Db()
+# dbConnect = Db()
