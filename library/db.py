@@ -54,7 +54,9 @@ class Db:
         return str(datetime)
 
     async def executeQuery(self, sqlString):
-        return await self.__dbExec.execute(text(sqlString))
+        async with self.__dbExec.begin() as conn:
+            await conn.execute(text(sqlString))
+            await self.__dbExec.dispose()
 
     async def executeToDict(self, sqlString):
         # print("xxxxxx")
