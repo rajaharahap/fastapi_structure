@@ -69,14 +69,16 @@ class Db:
     #     return json.dumps(await self.executeToDict(sqlString), default=self.convert_datetime_to_string)
 
     async def executeTrans(self, sqlStringArray:[]):
-        Session = async_sessionmaker(bind=self.__dbExec)
-        session = Session()
+        Session = async_sessionmaker(self.__dbExec, expire_on_commit=False)
         status=""
         try:
-            for sqlString in sqlStringArray:
-                await session.execute(text(sqlString))
-            await session.commit()
-            status = True
+            async with Session() as session:
+                for sqlString in sqlStringArray:
+                    await session.execute(text(sqlString))
+                await session.commit()
+                await session.close()
+                await self.__dbExec.dispose()
+                status = True
         except SQLAlchemyError as e:
             await session.rollback()
             status = False
